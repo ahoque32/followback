@@ -17,6 +17,7 @@
     "react": "^18",
     "react-dom": "^18",
     "react-email": "^5.2.5",
+    "recharts": "^3.7.0",
     "resend": "^6.9.1",
     "twilio": "^5.12.0"
   },
