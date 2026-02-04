@@ -178,7 +178,7 @@ export default function DashboardPage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <a
-              href="/customers"
+              href="/dashboard/customers"
               className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <span className="text-2xl mr-3">👥</span>

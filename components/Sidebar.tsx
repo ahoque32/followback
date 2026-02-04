@@ -6,7 +6,7 @@ import { UserButton } from '@clerk/nextjs';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { name: 'Customers', href: '/customers', icon: '👥' },
+  { name: 'Customers', href: '/dashboard/customers', icon: '👥' },
   { name: 'Campaigns', href: '/campaigns', icon: '📢' },
   { name: 'Settings', href: '/settings', icon: '⚙️' },
 ];
