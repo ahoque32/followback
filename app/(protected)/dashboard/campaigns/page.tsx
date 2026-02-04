@@ -14,6 +14,12 @@ interface Campaign {
   created_at: string;
 }
 
+interface Business {
+  id: string;
+  plan_type: string;
+  campaign_limit: number;
+}
+
 type CampaignChannel = 'email' | 'sms' | 'both';
 
 // Pre-built templates
@@ -44,10 +50,12 @@ const PRE_BUILT_TEMPLATES = [
 export default function CampaignsPage() {
   const supabase = useSupabase();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -58,12 +66,22 @@ export default function CampaignsPage() {
     discount_percent: 10,
   });
 
-  // Fetch campaigns
+  // Fetch business and campaigns
   const fetchCampaigns = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Fetch business info
+      const { data: businessData, error: businessError } = await supabase
+        .from('businesses')
+        .select('id, plan_type, campaign_limit')
+        .single();
+
+      if (businessError) throw businessError;
+      setBusiness(businessData);
+
+      // Fetch campaigns
       const { data, error: fetchError } = await supabase
         .from('campaigns')
         .select('*')
@@ -84,9 +102,22 @@ export default function CampaignsPage() {
     fetchCampaigns();
   }, [fetchCampaigns]);
 
+  // Check if at campaign limit
+  const isAtLimit = () => {
+    if (!business) return false;
+    return campaigns.length >= business.campaign_limit;
+  };
+
   // Create campaign
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check limit before creating
+    if (isAtLimit()) {
+      setShowCreateModal(false);
+      setShowUpgradeModal(true);
+      return;
+    }
 
     try {
       setError(null);
@@ -231,14 +262,53 @@ export default function CampaignsPage() {
           </div>
         )}
 
+        {/* Limit Warning Banner */}
+        {business && campaigns.length >= business.campaign_limit && (
+          <div className="mb-6 bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-lg">
+            <div className="flex items-start">
+              <div className="flex-1">
+                <p className="font-medium">Campaign limit reached</p>
+                <p className="text-sm mt-1">
+                  You&apos;ve reached your {business.plan_type} plan limit of {business.campaign_limit} campaigns. 
+                  Upgrade to create more campaigns.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                className="ml-4 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                Upgrade Plan
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Actions Bar */}
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              if (isAtLimit()) {
+                setShowUpgradeModal(true);
+              } else {
+                setShowCreateModal(true);
+              }
+            }}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             + Create Campaign
           </button>
+          {business && (
+            <div className={`text-sm font-medium ${
+              campaigns.length >= business.campaign_limit * 0.9 
+                ? 'text-orange-600' 
+                : 'text-gray-600'
+            }`}>
+              {campaigns.length} / {business.campaign_limit} campaigns used
+              {campaigns.length >= business.campaign_limit && (
+                <span className="ml-2 text-red-600 font-bold">— Limit reached!</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Campaigns List */}
@@ -249,7 +319,13 @@ export default function CampaignsPage() {
                 No campaigns yet. Create your first campaign to start winning back customers!
               </p>
               <button
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => {
+                  if (isAtLimit()) {
+                    setShowUpgradeModal(true);
+                  } else {
+                    setShowCreateModal(true);
+                  }
+                }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 Create Your First Campaign
@@ -337,6 +413,63 @@ export default function CampaignsPage() {
             ))
           )}
         </div>
+
+        {/* Upgrade Modal */}
+        {showUpgradeModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Upgrade Your Plan</h2>
+                
+                <p className="text-gray-600 mb-6">
+                  You&apos;ve reached your {business?.plan_type || 'free'} plan limit of {business?.campaign_limit || 3} campaigns.
+                  Upgrade to create more campaigns and unlock additional features.
+                </p>
+
+                <div className="space-y-3 mb-6">
+                  <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-bold text-gray-900">Pro Plan</h3>
+                      <span className="text-2xl font-bold text-gray-900">$29<span className="text-sm text-gray-600">/mo</span></span>
+                    </div>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>✓ Up to 20 campaigns</li>
+                      <li>✓ 500 customers</li>
+                      <li>✓ Email + SMS</li>
+                    </ul>
+                  </div>
+
+                  <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-bold text-gray-900">Business Plan</h3>
+                      <span className="text-2xl font-bold text-gray-900">$79<span className="text-sm text-gray-600">/mo</span></span>
+                    </div>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>✓ Up to 100 campaigns</li>
+                      <li>✓ 2,000 customers</li>
+                      <li>✓ All features</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowUpgradeModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <a
+                    href="/"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-center"
+                  >
+                    View Plans
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Create Campaign Modal */}
         {showCreateModal && (

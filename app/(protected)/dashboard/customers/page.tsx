@@ -16,6 +16,12 @@ interface Customer {
   created_at: string;
 }
 
+interface Business {
+  id: string;
+  plan_type: string;
+  customer_limit: number;
+}
+
 interface CSVRow {
   name?: string;
   Name?: string;
@@ -35,11 +41,13 @@ export default function CustomersPage() {
   const supabase = useSupabase();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -71,12 +79,22 @@ export default function CustomersPage() {
     return tags;
   };
 
-  // Fetch customers
+  // Fetch business and customers
   const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Fetch business info
+      const { data: businessData, error: businessError } = await supabase
+        .from('businesses')
+        .select('id, plan_type, customer_limit')
+        .single();
+
+      if (businessError) throw businessError;
+      setBusiness(businessData);
+
+      // Fetch customers
       const { data, error: fetchError } = await supabase
         .from('customers')
         .select('*')
@@ -145,10 +163,23 @@ export default function CustomersPage() {
     setFilteredCustomers(filtered);
   }, [searchQuery, dateFilter, customers]);
 
+  // Check if at customer limit
+  const isAtLimit = () => {
+    if (!business) return false;
+    return customers.length >= business.customer_limit;
+  };
+
   // Add customer manually
   const handleAddCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check limit before adding
+    if (isAtLimit()) {
+      setShowAddModal(false);
+      setShowUpgradeModal(true);
+      return;
+    }
+
     try {
       setError(null);
       
@@ -209,6 +240,12 @@ export default function CustomersPage() {
 
           if (customersToInsert.length === 0) {
             throw new Error('No valid customers found in CSV');
+          }
+
+          // Check if import would exceed limit
+          if (business && customers.length + customersToInsert.length > business.customer_limit) {
+            setShowUpgradeModal(true);
+            throw new Error(`Import would exceed your plan limit of ${business.customer_limit} customers`);
           }
 
           const { error: insertError } = await supabase
@@ -334,7 +371,13 @@ export default function CustomersPage() {
 
             {/* Add Customer Button */}
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={() => {
+                if (isAtLimit()) {
+                  setShowUpgradeModal(true);
+                } else {
+                  setShowAddModal(true);
+                }
+              }}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap"
             >
               + Add Customer
@@ -439,10 +482,102 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        {/* Customer Count */}
-        <div className="mt-4 text-sm text-gray-500">
-          Showing {filteredCustomers.length} of {customers.length} customers
+        {/* Customer Count & Limit */}
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-sm text-gray-500">
+            Showing {filteredCustomers.length} of {customers.length} customers
+          </div>
+          {business && (
+            <div className={`text-sm font-medium ${
+              customers.length >= business.customer_limit * 0.9 
+                ? 'text-orange-600' 
+                : 'text-gray-600'
+            }`}>
+              {customers.length} / {business.customer_limit} customers used
+              {customers.length >= business.customer_limit && (
+                <span className="ml-2 text-red-600 font-bold">— Limit reached!</span>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Limit Warning Banner */}
+        {business && customers.length >= business.customer_limit && (
+          <div className="mt-4 bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-lg">
+            <div className="flex items-start">
+              <div className="flex-1">
+                <p className="font-medium">Customer limit reached</p>
+                <p className="text-sm mt-1">
+                  You&apos;ve reached your {business.plan_type} plan limit of {business.customer_limit} customers. 
+                  Upgrade to add more customers.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                className="ml-4 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                Upgrade Plan
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Upgrade Modal */}
+        {showUpgradeModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Upgrade Your Plan</h2>
+                
+                <p className="text-gray-600 mb-6">
+                  You&apos;ve reached your {business?.plan_type || 'free'} plan limit of {business?.customer_limit || 50} customers.
+                  Upgrade to add more customers and unlock additional features.
+                </p>
+
+                <div className="space-y-3 mb-6">
+                  <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-bold text-gray-900">Pro Plan</h3>
+                      <span className="text-2xl font-bold text-gray-900">$29<span className="text-sm text-gray-600">/mo</span></span>
+                    </div>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>✓ Up to 500 customers</li>
+                      <li>✓ Email + SMS campaigns</li>
+                      <li>✓ Advanced analytics</li>
+                    </ul>
+                  </div>
+
+                  <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-bold text-gray-900">Business Plan</h3>
+                      <span className="text-2xl font-bold text-gray-900">$79<span className="text-sm text-gray-600">/mo</span></span>
+                    </div>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>✓ Up to 2,000 customers</li>
+                      <li>✓ Unlimited campaigns</li>
+                      <li>✓ White-label options</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowUpgradeModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <a
+                    href="/"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-center"
+                  >
+                    View Plans
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Add Customer Modal */}
         {showAddModal && (

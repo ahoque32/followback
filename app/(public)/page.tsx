@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<'pro' | 'business' | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,6 +38,39 @@ export default function LandingPage() {
       setMessage({ type: 'error', text: 'Failed to join waitlist. Please try again.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCheckout = async (plan: 'pro' | 'business') => {
+    setCheckoutLoading(plan);
+
+    try {
+      const response = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ plan }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else {
+        // If not authenticated, redirect to sign in
+        if (response.status === 401) {
+          router.push('/dashboard'); // This will trigger Clerk sign-in
+        } else {
+          alert(data.error || 'Failed to start checkout');
+        }
+      }
+    } catch (error) {
+      console.error('Error starting checkout:', error);
+      alert('Failed to start checkout. Please try again.');
+    } finally {
+      setCheckoutLoading(null);
     }
   };
 
@@ -196,8 +232,12 @@ export default function LandingPage() {
                   <span className="text-gray-700">Priority support</span>
                 </li>
               </ul>
-              <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                Get Started
+              <button
+                onClick={() => handleCheckout('pro')}
+                disabled={checkoutLoading !== null}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {checkoutLoading === 'pro' ? 'Loading...' : 'Get Started'}
               </button>
             </div>
 
@@ -235,8 +275,12 @@ export default function LandingPage() {
                   <span className="text-gray-700">Dedicated account manager</span>
                 </li>
               </ul>
-              <button className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                Get Started
+              <button
+                onClick={() => handleCheckout('business')}
+                disabled={checkoutLoading !== null}
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {checkoutLoading === 'business' ? 'Loading...' : 'Get Started'}
               </button>
             </div>
           </div>
