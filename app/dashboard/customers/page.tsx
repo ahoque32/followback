@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSupabase } from '@/lib/supabase';
 import Papa from 'papaparse';
 
@@ -16,7 +16,20 @@ interface Customer {
   created_at: string;
 }
 
-type TagType = 'VIP' | 'at-risk' | 'lost';
+interface CSVRow {
+  name?: string;
+  Name?: string;
+  email?: string;
+  Email?: string;
+  phone?: string;
+  Phone?: string;
+  last_visit?: string;
+  'Last Visit'?: string;
+  visit_count?: string;
+  'Visit Count'?: string;
+  total_spent?: string;
+  'Total Spent'?: string;
+}
 
 export default function CustomersPage() {
   const supabase = useSupabase();
@@ -59,7 +72,7 @@ export default function CustomersPage() {
   };
 
   // Fetch customers
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -85,11 +98,11 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchCustomers();
-  }, [supabase]);
+  }, [fetchCustomers]);
 
   // Apply filters
   useEffect(() => {
@@ -185,7 +198,7 @@ export default function CustomersPage() {
       complete: async (results) => {
         try {
           // Map CSV rows to customer objects
-          const customersToInsert = results.data.map((row: any) => ({
+          const customersToInsert = (results.data as CSVRow[]).map((row) => ({
             name: row.name || row.Name || '',
             email: row.email || row.Email || '',
             phone: row.phone || row.Phone || '',

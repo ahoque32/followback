@@ -10,11 +10,14 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.37.2",
+    "@react-email/components": "^1.0.6",
     "@supabase/supabase-js": "^2.94.0",
     "next": "14.2.35",
     "papaparse": "^5.5.3",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-email": "^5.2.5",
+    "resend": "^6.9.1"
   },
   "devDependencies": {
     "@types/node": "^20",
