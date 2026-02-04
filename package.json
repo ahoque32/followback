@@ -17,6 +17,7 @@
     "react": "^18",
     "react-dom": "^18",
     "react-email": "^5.2.5",
+    "react-hot-toast": "^2.6.0",
     "recharts": "^3.7.0",
     "resend": "^6.9.1",
     "stripe": "^20.3.0",

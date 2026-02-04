@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSupabase } from '@/lib/supabase';
+import toast from 'react-hot-toast';
 
 interface Campaign {
   id: string;
@@ -135,6 +136,8 @@ export default function CampaignsPage() {
 
       if (insertError) throw insertError;
 
+      toast.success('Campaign created successfully!');
+
       // Reset form and close modal
       setFormData({
         name: '',
@@ -149,7 +152,9 @@ export default function CampaignsPage() {
       fetchCampaigns();
     } catch (err) {
       console.error('Error creating campaign:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create campaign');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create campaign';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -165,6 +170,8 @@ export default function CampaignsPage() {
 
       if (updateError) throw updateError;
 
+      toast.success(`Campaign ${!currentActive ? 'activated' : 'deactivated'} successfully!`);
+
       // Update local state
       setCampaigns(campaigns.map(campaign =>
         campaign.id === campaignId
@@ -173,7 +180,9 @@ export default function CampaignsPage() {
       ));
     } catch (err) {
       console.error('Error toggling campaign:', err);
-      setError(err instanceof Error ? err.message : 'Failed to toggle campaign');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to toggle campaign';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 

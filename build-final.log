@@ -1,0 +1,60 @@
+
+> followback@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/17) ...
+   Generating static pages (4/17) 
+Unexpected error in track-open: B [Error]: Dynamic server usage: Route /api/track-open couldn't be rendered statically because it used `nextUrl.searchParams`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at V (/home/ahawk/followback/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:21778)
+    at Object.get (/home/ahawk/followback/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:29137)
+    at u (/home/ahawk/followback/.next/server/app/api/track-open/route.js:1:1080)
+    at /home/ahawk/followback/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38417
+    at /home/ahawk/followback/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/home/ahawk/followback/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/home/ahawk/followback/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/home/ahawk/followback/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/home/ahawk/followback/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /home/ahawk/followback/node_modules/next/dist/server/lib/trace/tracer.js:122:103 {
+  description: "Route /api/track-open couldn't be rendered statically because it used `nextUrl.searchParams`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+   Generating static pages (8/17) 
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+   Generating static pages (12/17) 
+ ✓ Generating static pages (17/17)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    3.06 kB        99.2 kB
+├ ○ /_not-found                          875 B          88.3 kB
+├ ƒ /api/cron/check-campaigns            0 B                0 B
+├ ƒ /api/send-email                      0 B                0 B
+├ ƒ /api/send-sms                        0 B                0 B
+├ ƒ /api/stripe/checkout                 0 B                0 B
+├ ƒ /api/stripe/webhook                  0 B                0 B
+├ ƒ /api/track-open                      0 B                0 B
+├ ƒ /api/twilio/webhook                  0 B                0 B
+├ ƒ /api/waitlist                        0 B                0 B
+├ ƒ /dashboard                           2.27 kB         171 kB
+├ ƒ /dashboard/analytics                 102 kB          271 kB
+├ ƒ /dashboard/campaigns                 4.19 kB         177 kB
+└ ƒ /dashboard/customers                 10.7 kB         184 kB
++ First Load JS shared by all            87.4 kB
+  ├ chunks/117-800a3492e1e3c2d0.js       31.7 kB
+  ├ chunks/fd9d1056-b0610abf48bcdc51.js  53.7 kB
+  └ other shared chunks (total)          1.98 kB
+
+
+ƒ Middleware                             77.1 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

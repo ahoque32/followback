@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSupabase } from '@/lib/supabase';
 import Papa from 'papaparse';
+import toast from 'react-hot-toast';
 
 interface Customer {
   id: string;
@@ -207,11 +208,15 @@ export default function CustomersPage() {
       });
       setShowAddModal(false);
       
+      toast.success('Customer added successfully!');
+      
       // Refresh customers list
       fetchCustomers();
     } catch (err) {
       console.error('Error adding customer:', err);
-      setError(err instanceof Error ? err.message : 'Failed to add customer');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to add customer';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -254,11 +259,13 @@ export default function CustomersPage() {
 
           if (insertError) throw insertError;
 
-          alert(`Successfully imported ${customersToInsert.length} customers`);
+          toast.success(`Successfully imported ${customersToInsert.length} customers!`);
           fetchCustomers();
         } catch (err) {
           console.error('Error importing CSV:', err);
-          setError(err instanceof Error ? err.message : 'Failed to import CSV');
+          const errorMessage = err instanceof Error ? err.message : 'Failed to import CSV';
+          setError(errorMessage);
+          toast.error(errorMessage);
         } finally {
           setUploading(false);
           if (fileInputRef.current) {
