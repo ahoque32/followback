@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSupabase } from '@/lib/supabase';
 
 interface Campaign {
@@ -59,7 +59,7 @@ export default function CampaignsPage() {
   });
 
   // Fetch campaigns
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -78,11 +78,11 @@ export default function CampaignsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchCampaigns();
-  }, [supabase]);
+  }, [fetchCampaigns]);
 
   // Create campaign
   const handleCreateCampaign = async (e: React.FormEvent) => {
